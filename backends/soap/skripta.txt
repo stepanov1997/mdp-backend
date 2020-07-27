@@ -1,0 +1,5 @@
+pip install flask
+pip install soaplib==2.0.0-beta2
+pip install suds==0.4
+python -m pip uninstall werkzeug
+python -m pip install werkzeug==0.16.0
