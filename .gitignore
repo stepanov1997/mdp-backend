@@ -5,7 +5,8 @@
 /.config
 /.forever
 /.git
-/.*
+/.dbshell
+/.mongorc.js
 /.gnupg
 /.local
 /.node_repl_history
@@ -27,4 +28,4 @@
 /backend/rest/node_modules/*
 /libs/*
 /backend/soap/venv/*
-/node_modules
+/node_modules/*
