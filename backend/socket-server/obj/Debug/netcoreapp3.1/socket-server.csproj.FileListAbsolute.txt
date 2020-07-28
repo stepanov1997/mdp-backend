@@ -1,0 +1,13 @@
+/home/kristijans/backend/socket-server/bin/Debug/netcoreapp3.1/socket-server
+/home/kristijans/backend/socket-server/bin/Debug/netcoreapp3.1/socket-server.deps.json
+/home/kristijans/backend/socket-server/bin/Debug/netcoreapp3.1/socket-server.runtimeconfig.json
+/home/kristijans/backend/socket-server/bin/Debug/netcoreapp3.1/socket-server.runtimeconfig.dev.json
+/home/kristijans/backend/socket-server/bin/Debug/netcoreapp3.1/socket-server.dll
+/home/kristijans/backend/socket-server/bin/Debug/netcoreapp3.1/socket-server.pdb
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.csprojAssemblyReference.cache
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.AssemblyInfoInputs.cache
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.AssemblyInfo.cs
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.csproj.CoreCompileInputs.cache
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.dll
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.pdb
+/home/kristijans/backend/socket-server/obj/Debug/netcoreapp3.1/socket-server.genruntimeconfig.cache
