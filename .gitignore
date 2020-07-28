@@ -5,6 +5,7 @@
 /.config
 /.forever
 /.git
+/.*
 /.gnupg
 /.local
 /.node_repl_history
@@ -26,3 +27,4 @@
 /backend/rest/node_modules/*
 /libs/*
 /backend/soap/venv/*
+/node_modules
