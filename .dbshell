@@ -1,0 +1,38 @@
+mongo
+console.log('hello')
+log('hello')
+use mydb
+db
+show dbs
+db.movie.insert({"name":"tutorials point"})
+db.movie
+db.movie.find()
+db.movie.update(({'title':'MongoDB Overview'},{$set:{'title':'New MongoDB Tutorial'}}))
+db.movie.update({'title':'tutorials point'},{$set:{'title':'New MongoDB Tutorial'}})
+db.movie.find()
+db.movie.update({'name':'tutorials point'},{$set:{'name':'New MongoDB Tutorial'}})
+db.movie.find()
+db list
+db list;
+db
+use db
+find()
+db.users
+db.users.find()
+db.users.find({})
+test
+use test
+db.users
+db.users.find()
+db.users.find();
+show collections
+ls
+db
+db.user.find()
+db.user.findFirst()
+db.find
+db.find()
+db
+admin.users
+admin.users.find()
+db.users.find()

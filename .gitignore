@@ -23,3 +23,6 @@
 /soap?wsdl.3
 /soap?wsdl.4
 /www
+/backend/rest/node_modules/*
+/libs/*
+/backend/soap/venv/*
