@@ -22,12 +22,11 @@ class Program
             TcpClient client = ServerSocket.AcceptTcpClient();
             Console.WriteLine("Someone connected!!");
 
-            Thread thread = new Thread(() => handle_clients(client));
-            thread.Start();
+            Task.Run(async() => await handle_clients(client));
         }
     }
 
-    public static void handle_clients(TcpClient tcpClient)
+    public async static Task handle_clients(TcpClient tcpClient)
     {
         string username = "";
         string usernameSagovornika = "";
@@ -66,10 +65,10 @@ class Program
             {
                 Console.WriteLine("sagovornik");
                 byte[] buffer = Encoding.UTF8.GetBytes("[Server] Unesite korisnicko ime sagovornika:");
-                stream.Write(buffer, 0, buffer.Length);
+                await stream.WriteAsync(buffer, 0, buffer.Length);
 
                 buffer = new byte[1024];
-                int byte_count = stream.Read(buffer, 0, buffer.Length);
+                int byte_count = await stream.ReadAsync(buffer, 0, buffer.Length);
 
                 if (byte_count == 0)
                 {
@@ -90,16 +89,20 @@ class Program
 
             while (true)
             {
+                Thread.Sleep(500);
                 Console.WriteLine("razgovor");
                 TcpClient sagovornik = list_clients[usernameSagovornika];
                 NetworkStream streamSagovornik = sagovornik.GetStream();
 
+                string data = "";
                 byte[] buffer = new byte[1024];
-                int byte_count = streamSagovornik.Read(buffer, 0, buffer.Length);
-                string data = Encoding.UTF8.GetString(buffer, 0, byte_count);
+                int byte_count = await streamSagovornik.ReadAsync(buffer, 0, buffer.Length);
+                data = Encoding.UTF8.GetString(buffer, 0, byte_count);
 
                 buffer = Encoding.UTF8.GetBytes($"[{usernameSagovornika}]: {data}");
-                stream.Write(buffer, 0, buffer.Length);
+                await stream.WriteAsync(buffer, 0, buffer.Length);
+                
+
                 if (data == "END")
                 {
                     break;
