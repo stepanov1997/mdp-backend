@@ -36,3 +36,24 @@ db
 admin.users
 admin.users.find()
 db.users.find()
+show collections
+show collection
+help
+show dbs
+admin.user.find()
+use admin
+db.  db.users.find()
+show dbs
+use local
+show collections
+;
+use mydb
+show collections
+;
+db.user.find()
+show dbs
+use db
+;
+help
+db.user.find()
+db.User.find()
