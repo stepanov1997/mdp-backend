@@ -1,18 +1,12 @@
 from time import ctime
 from flask import Flask
 from flaskext.enterprise import Enterprise
+from controller import user_controller
 from mongoengine import *
 
 app = Flask(__name__)
 
 connect('db')
-
-
-class User(Document):
-    name = StringField(required=True, min_length=1, max_length=200)
-    surname = StringField(required=True, min_length=1, max_length=200)
-    jmbg = StringField(required=True, min_length=1, max_length=200)
-
 
 enterprise = Enterprise(app)
 
@@ -32,14 +26,13 @@ class DemoService(enterprise.SOAPService):
 
     @enterprise.soap(String, String, String, _returns=String)
     def signIn(self, name, surname, jmbg):
-        try:
-            user = User(name=name, surname=surname, jmbg=jmbg)
-            user.save()
-        except Exception as e:
-            print(e)
-            return "404"
-        return str(user.id)
+        token = user_controller.signInUser(name, surname, jmbg)
+        return token
 
+    @enterprise.soap(String, _returns=String)
+    def checkToken(self, token):
+        name = user_controller.checkToken(token)
+        return name
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8083)

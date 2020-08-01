@@ -57,3 +57,9 @@ use db
 help
 db.user.find()
 db.User.find()
+use db
+db.user.find().pretty()
+use db
+db.user.find().pretty()
+use db
+db.user.find().pretty()
