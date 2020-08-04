@@ -6,133 +6,207 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Linq;
 
-class Program
+namespace SocketServer
 {
-    static readonly object _lock = new object();
-    static readonly Dictionary<string, TcpClient> list_clients = new Dictionary<string, TcpClient>();
-
-    static void Main(string[] args)
+    class Program
     {
-        TcpListener ServerSocket = new TcpListener(IPAddress.Parse("0.0.0.0"), 8084);
-        ServerSocket.Start();
+        static readonly object _lock = new object();
+        static readonly Dictionary<string, PersonClient> list_clients = new Dictionary<string, PersonClient>();
+        static readonly Queue<MedicClient> freeMedicsQueue = new Queue<MedicClient>();
 
-        while (true)
+        static void Main(string[] args)
         {
-            TcpClient client = ServerSocket.AcceptTcpClient();
-            Console.WriteLine("Someone connected!!");
+            Task.Run(async () =>
+            {
+                TcpListener listenerForPeople = new TcpListener(IPAddress.Parse("0.0.0.0"), 8084);
+                TcpListener listenerForMedics = new TcpListener(IPAddress.Parse("0.0.0.0"), 8085);
+                listenerForPeople.Start();
+                listenerForMedics.Start();
 
-            Task.Run(async() => await handle_clients(client));
+
+                Task peopleTask = Task.Run(() =>
+                {
+                    while (true)
+                    {
+                        TcpClient client = listenerForPeople.AcceptTcpClient();
+                        NetworkStream stream = client.GetStream();
+                        Console.WriteLine("Someone connected!!");
+                        Task.Run(async () => await handle_person(client));
+                    }
+                });
+                Task medicTask = Task.Run(() =>
+                {
+                    while (true)
+                    {
+                        TcpClient client = listenerForMedics.AcceptTcpClient();
+                        NetworkStream stream = client.GetStream();
+                        Console.WriteLine("Medic connected!!");
+                        Task.Run(async () => await handle_medic(client));
+                    }
+                });
+                await Task.WhenAll(new Task[] { peopleTask, medicTask });
+            }).Wait();
         }
-    }
 
-    public async static Task handle_clients(TcpClient tcpClient)
-    {
-        string username = "";
-        string usernameSagovornika = "";
-        try
+        public async static Task handle_person(TcpClient tcpClient)
         {
-            Thread.Sleep(1000);
-            TcpClient client = tcpClient;
-
-            NetworkStream stream = client.GetStream();
-
-            // username
-            while (true)
+            PersonClient personClient = null;
+            try
             {
-                Console.WriteLine("username");
-                byte[] buffer = Encoding.UTF8.GetBytes("[Server] Unesite vaše korisnicko ime:");
-                stream.Write(buffer, 0, buffer.Length);
-
-                buffer = new byte[1024];
-                int byte_count = stream.Read(buffer, 0, buffer.Length);
-
-                if (byte_count == 0)
-                {
-                    continue;
-                }
-                string data = Encoding.UTF8.GetString(buffer, 0, byte_count);
-
-                Console.WriteLine(data);
-                username = data.Replace("\n", "").Replace("\r", "");
-
-                lock (_lock) list_clients.Add(username, client);
-                break;
-            }
-
-            // username sagovornika
-            while (true)
-            {
-                Console.WriteLine("sagovornik");
-                byte[] buffer = Encoding.UTF8.GetBytes("[Server] Unesite korisnicko ime sagovornika:");
-                await stream.WriteAsync(buffer, 0, buffer.Length);
-
-                buffer = new byte[1024];
-                int byte_count = await stream.ReadAsync(buffer, 0, buffer.Length);
-
-                if (byte_count == 0)
-                {
-                    continue;
-                }
-
-                string data = Encoding.UTF8.GetString(buffer, 0, byte_count);
-
-                usernameSagovornika = data.Replace("\n", "").Replace("\r", "");
-                break;
-            }
-
-            while (!list_clients.ContainsKey(usernameSagovornika))
-            {
-                Console.WriteLine("cekanje");
                 Thread.Sleep(1000);
-            }
+                personClient = new PersonClient();
+                personClient.CurrentClient = tcpClient;
+                MedicClient sagovornik = null;
+                NetworkStream stream = tcpClient.GetStream();
 
-            while (true)
-            {
-                Thread.Sleep(500);
-                Console.WriteLine("razgovor");
-                TcpClient sagovornik = list_clients[usernameSagovornika];
-                NetworkStream streamSagovornik = sagovornik.GetStream();
-
-                string data = "";
-                byte[] buffer = new byte[1024];
-                int byte_count = await streamSagovornik.ReadAsync(buffer, 0, buffer.Length);
-                data = Encoding.UTF8.GetString(buffer, 0, byte_count);
-
-                buffer = Encoding.UTF8.GetBytes($"[{usernameSagovornika}]: {data}");
-                await stream.WriteAsync(buffer, 0, buffer.Length);
-                
-
-                if (data == "END")
+                // token
+                while (true)
                 {
+                    byte[] buffer = new byte[1024];
+                    int byte_count = await stream.ReadAsync(buffer, 0, buffer.Length);
+
+                    if (byte_count == 0)
+                    {
+                        continue;
+                    }
+                    string data = Encoding.UTF8.GetString(buffer, 0, byte_count);
+
+                    Console.WriteLine(data);
+                    personClient.Token = data;
+
+                    lock (_lock) list_clients.Add(personClient.Token, personClient);
                     break;
                 }
+
+                while (true)
+                {
+                    if (freeMedicsQueue.Count > 0)
+                    {
+                        sagovornik = freeMedicsQueue.Dequeue();
+                        personClient.MedicClient = sagovornik;
+                        sagovornik.PersonClient = personClient;
+                        break;
+                    }
+                    Console.WriteLine("cekanje medica");
+                    Thread.Sleep(1000);
+                }
+
+                while (true)
+                {
+                    Thread.Sleep(500);
+                    Console.WriteLine("razgovor");
+
+                    NetworkStream streamSagovornik = sagovornik.CurrentClient.GetStream();
+
+                    string data = "";
+                    byte[] buffer = new byte[1024];
+                    int byte_count = await streamSagovornik.ReadAsync(buffer, 0, buffer.Length);
+
+                    data = Encoding.UTF8.GetString(buffer, 0, byte_count);
+
+                    buffer = Encoding.UTF8.GetBytes($"[{DateTime.Now:dd.MM.yyyy HH:MM:ss}]\n[Medic]: {data}");
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+
+                    Console.WriteLine("[Medic]: " + data);
+
+                    if (data == "END")
+                    {
+                        break;
+                    }
+                }
             }
-        }
-        catch (Exception)
-        {
-            Console.WriteLine("Client ended session.");
-        }
-        finally
-        {
-            lock (_lock) list_clients.Remove(username);
-            tcpClient.Client.Shutdown(SocketShutdown.Both);
-            tcpClient.Close();
-        }
-    }
-
-    /*public static void broadcast(string data)
-    {
-        byte[] buffer = Encoding.UTF8.GetBytes(data + Environment.NewLine);
-
-        lock (_lock)
-        {
-            foreach (TcpClient c in list_clients.Values)
+            catch (Exception e)
             {
-                NetworkStream stream = c.GetStream();
-
-                stream.Write(buffer, 0, buffer.Length);
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine("Client ended session.");
+                return;
+            }
+            finally
+            {
+                if (personClient?.Token != null)
+                {
+                    lock (_lock) list_clients.Remove(personClient.Token);
+                }
+                tcpClient.Client.Shutdown(SocketShutdown.Both);
+                tcpClient.Close();
             }
         }
-    }*/
+
+        public async static Task handle_medic(TcpClient tcpClient)
+        {
+            MedicClient medicClient = null;
+            PersonClient personClient = null;
+            try
+            {
+                Thread.Sleep(1000);
+                medicClient = new MedicClient();
+                medicClient.CurrentClient = tcpClient;
+                freeMedicsQueue.Enqueue(medicClient);
+
+                NetworkStream stream = tcpClient.GetStream();
+
+                while (true)
+                {
+                    lock (_lock)
+                    {
+                        if (medicClient.PersonClient != null)
+                        {
+                            personClient = medicClient.PersonClient;
+                            break;
+                        }
+                    }
+                    Console.WriteLine("cekanje osobe");
+                    Thread.Sleep(1000);
+                }
+
+                while (medicClient.PersonClient != null)
+                {
+                    NetworkStream personStream = personClient.CurrentClient.GetStream();
+
+                    string data = "";
+                    byte[] buffer = new byte[1024];
+                    int byte_count = await personStream.ReadAsync(buffer, 0, buffer.Length);
+                   
+                    data = Encoding.UTF8.GetString(buffer, 0, byte_count);
+
+                    Console.WriteLine("[Person]: " + data);
+
+                    buffer = Encoding.UTF8.GetBytes($"[{DateTime.Now:dd.MM.yyyy HH:MM:ss}]\n[{personClient.Token}]: {data}");
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
+
+                    if (data == "END")
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine("Client ended session.");
+                return;
+            }
+            finally
+            {
+                tcpClient.Client.Shutdown(SocketShutdown.Both);
+                tcpClient.Close();
+            }
+        }
+        /*public static void broadcast(string data)
+        {
+            byte[] buffer = Encoding.UTF8.GetBytes(data + Environment.NewLine);
+
+            lock (_lock)
+            {
+                foreach (TcpClient c in list_clients.Values)
+                {
+                    NetworkStream stream = c.GetStream();
+
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+            }
+        }*/
+    }
 }
