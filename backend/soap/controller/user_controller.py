@@ -32,8 +32,27 @@ def checkToken(token):
         users = User.User.objects(token=token)
         count = len(users)
     except:
-        return None
+        return False
     if count>0:
-        return users[0].name
+        return True
     else: 
+        return False
+
+def deactivateToken(token):
+    try:
+        if not(checkToken(token)):
+            return False
+        user = User.User.objects(token=token)[0]
+        user.token=None
+        user.save()
+    except:
+        return False
+    return True
+
+def getActiveTokens():
+    try:
+        users = User.User.objects()
+        return map(lambda user : user.token, users)
+    except:
         return None
+    return []]
