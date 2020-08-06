@@ -13,7 +13,7 @@ enterprise = Enterprise(app)
 String = enterprise._sp.String
 Integer = enterprise._sp.Integer
 Boolean = enterprise._sp.Boolean
-Array = enterprise._scls.Array.
+Array = enterprise._scls.Array
 
 
 class DemoService(enterprise.SOAPService):
@@ -35,7 +35,7 @@ class DemoService(enterprise.SOAPService):
         success = user_controller.deactivateToken(token)
         return success
 
-    @enterprise.soap(_returns=Array)
+    @enterprise.soap(_returns=Array(String))
     def getActiveTokens(self):
         listTokens = user_controller.getActiveTokens()
         return listTokens

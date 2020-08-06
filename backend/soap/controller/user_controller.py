@@ -55,4 +55,4 @@ def getActiveTokens():
         return map(lambda user : user.token, users)
     except:
         return None
-    return []]
+    return []
