@@ -10,13 +10,13 @@ def signInUser(name, surname, jmbg):
 
     try:
         try:
-            user = User.User.objects(name=name, surname=surname, jmbg=jmbg)[0]
+            user = User.User.objects(name=name, surname=surname, jmbg=jmbg, blocked=False)[0]
             print(str(user))
             user.token = token
             user.save()
         except:
             print(token)
-            user = User.User(name=name, surname=surname, jmbg=jmbg, token=token)
+            user = User.User(name=name, surname=surname, jmbg=jmbg, token=token, blocked=False)
             user.save()
 
     except Exception as e:
@@ -28,12 +28,15 @@ def signInUser(name, surname, jmbg):
 
 def checkToken(token):
     count = 0
+    user = None
     try:
         users = User.User.objects(token=token)
         count = len(users)
+        if count>0:
+            user = users[0]
     except:
         return False
-    if count>0:
+    if (count>0 and user!=None and not(user.blocked)) :
         return True
     else: 
         return False
@@ -43,7 +46,7 @@ def deactivateToken(token):
         if not(checkToken(token)):
             return False
         user = User.User.objects(token=token)[0]
-        user.token=None
+        user.blocked=True
         user.save()
     except:
         return False
@@ -52,7 +55,7 @@ def deactivateToken(token):
 def getActiveTokens():
     try:
         users = User.User.objects()
-        return map(lambda user : user.token, users)
+        return map(lambda user : user.token, [user for user in users if not(user.blocked)])
     except:
         return None
     return []

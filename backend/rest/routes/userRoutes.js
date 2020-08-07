@@ -2,19 +2,16 @@ const express = require('express');
 const userController = require('../controller/userController');
 const router = express.Router();
 
-
-router.route('/users')
+router.route('/')
 	.get(userController.listUsers)
 	.post(userController.addUser)
-
-router.route('/users/delete/:userId')
+router.route('/delete/:userId')
 	.post(userController.deleteUser)
-
-router.route('/users/put/:userId')
+router.route('/put/:userId')
 	.post(userController.updateUser)
-
-router.route('/users/:userId')
+router.route('/:userId')
 	.get(userController.readUser)
+router.route('/:token')
+	.get(userController.checkTokenEndpoint)
 
-	
 module.exports = router

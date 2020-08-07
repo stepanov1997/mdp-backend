@@ -8,7 +8,8 @@
     "express": "^4.17.1",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
-    "mongoose": "^5.9.26"
+    "mongoose": "^5.9.26",
+    "soap": "^0.32.0"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,14 +1,18 @@
 const express = require('express');
 const bodyParser = require('body-parser')
-const routes = require('./routes/userRoutes');
+const userRoutes = require('./routes/userRoutes');
+const typeUserRoutes = require('./routes/typeUserRoutes');
+const locationRoutes = require('./routes/locationRoutes');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/api', routes);
-
+app.use('/api/users', userRoutes);
+app.use('/api/userTypes', typeUserRoutes);
+app.use('/api/locations', locationRoutes);
+app.set('json spaces', 2)
 
 // Set up mongoose connection
 const mongoose = require('mongoose');
