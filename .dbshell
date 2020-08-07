@@ -65,3 +65,7 @@ use db
 db.user.find().pretty()
 use db
 db.user.find().pretty()
+use db
+db.user.find().pretty()
+db.User.find()
+exit()

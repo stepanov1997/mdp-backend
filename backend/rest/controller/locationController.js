@@ -12,7 +12,8 @@ const listLocations = async (req, res) => {
 }
 
 const addLocation = async (req, res) => {
-    if(!await checkToken(req.body.token)){
+    const exists = (await checkToken(req.body.token)).checkTokenResult;
+    if (!exists) {
         res.status(404).send({ error: "Token is not OK!" });
         return;
     }

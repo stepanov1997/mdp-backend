@@ -31,12 +31,14 @@ def checkToken(token):
     user = None
     try:
         users = User.User.objects(token=token)
+        print(users)
         count = len(users)
         if count>0:
             user = users[0]
-    except:
+    except Exception as e:
+        print(e)
         return False
-    if (count>0 and user!=None and not(user.blocked)) :
+    if (count>0 and not(user==None) and not(user.blocked)) :
         return True
     else: 
         return False
