@@ -21,7 +21,7 @@ public class FileServer implements IFileServer { // 1
         super();
     }
 
-    public String uploadFileOnServer(String token, String filename, byte[] data, int offset) throws RemoteException
+    public String uploadFileOnServer(String token, String filename, byte[] data, long offset) throws RemoteException
     {
         if(!checkToken(token))
         {
@@ -46,7 +46,7 @@ public class FileServer implements IFileServer { // 1
         return file.getPath();
     }
 
-    public byte[] downloadFileFromServer(String token, String filename, int offset, int count) throws RemoteException {
+    public byte[] downloadFileFromServer(String token, String filename, long offset, int count) throws RemoteException {
         if (!checkToken(token)) {
             return null;
         }

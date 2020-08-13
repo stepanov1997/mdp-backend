@@ -1,7 +1,7 @@
 const UserType = require("../model/userType");
 
 
-const listUserTypes = async (req, res) => {
+const listUserTypes = async(req, res) => {
     try {
         res.json(await UserType.find({}).exec());
     } catch (e) {
@@ -11,18 +11,16 @@ const listUserTypes = async (req, res) => {
     }
 }
 
-const addUserType = async (req, res) => {
+const addUserType = async(req, res) => {
     const exists = (await checkToken(req.body.token)).checkTokenResult;
     if (!exists) {
         res.status(404).send({ error: "Token is not OK!" });
         return;
     }
-    let userType = new UserType(
-        {
-            token: req.body.token,
-            userType: req.body.userType
-        }
-    );
+    let userType = new UserType({
+        token: req.body.token,
+        userType: req.body.userType
+    });
     try {
         await userType.save();
         res.json(await UserType.findById(userType.id).exec());
@@ -33,7 +31,7 @@ const addUserType = async (req, res) => {
     }
 }
 
-const readUserType = async (req, res) => {
+const readUserType = async(req, res) => {
     try {
         const result = await UserType.find({ token: req.params.token }).exec();
         res.json(result);
@@ -43,7 +41,7 @@ const readUserType = async (req, res) => {
         res.status(404).send({ error: "boo:(" });
     }
 }
-const updateUserType = async (req, res) => {
+const updateUserType = async(req, res) => {
     try {
         await UserType.findByIdAndUpdate(req.params.userTypeId, { $set: req.body }).exec();
         res.json(await UserType.findById(req.params.userId).exec());
@@ -53,7 +51,7 @@ const updateUserType = async (req, res) => {
         res.status(404).send({ error: "boo:(" });
     }
 }
-const deleteUserType = async (req, res) => {
+const deleteUserType = async(req, res) => {
     try {
         await user.findByIdAndDelete(req.params.userTypeId).exec();
         res.json(await User.findById(req.params.userTypeId).exec());
@@ -62,7 +60,7 @@ const deleteUserType = async (req, res) => {
         res.status(404).send({ error: "boo:(" });
     }
 }
-const UserTypeById = async (req, res) => {
+const UserTypeById = async(req, res) => {
     try {
         await UserType.findById(req.params.userTypeId).exec();
         res.json(await User.findById(req.params.userTypeId).exec());
@@ -73,10 +71,10 @@ const UserTypeById = async (req, res) => {
     }
 }
 
-const listTypesByToken = async (req, res) => {
+const listTypesByToken = async(req, res) => {
     console.log("cdscsv")
     try {
-        const types = await UserType.find({token: {$regex: req.params.token, $options: 'i'}}).exec();
+        const types = await UserType.find({ token: { $regex: req.params.token, $options: 'i' } }).exec();
         console.log(JSON.stringify(types))
         res.json(types);
         console.log('findByToken')
