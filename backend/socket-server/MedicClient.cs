@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Security;
 using System.Net.Sockets;
 
 namespace SocketServer
 {
     public class MedicClient : IEquatable<MedicClient>
     {
-        public TcpClient CurrentClient { get; set; } = null;
+        public (TcpClient, SslStream) CurrentClient { get; set; }
         public PersonClient PersonClient { get; set; } = null;
         public MedicClient() : base() { }
 
@@ -18,7 +19,7 @@ namespace SocketServer
         public bool Equals(MedicClient other)
         {
             return other != null &&
-                   EqualityComparer<TcpClient>.Default.Equals(CurrentClient, other.CurrentClient) &&
+                   EqualityComparer<(TcpClient, SslStream)>.Default.Equals(CurrentClient, other.CurrentClient) &&
                    EqualityComparer<PersonClient>.Default.Equals(PersonClient, other.PersonClient);
         }
 

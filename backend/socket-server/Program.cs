@@ -7,6 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Authentication;
+using System.IO;
 
 namespace SocketServer
 {
@@ -22,9 +26,9 @@ namespace SocketServer
             {
                 TcpListener listenerForPeople = new TcpListener(IPAddress.Parse("0.0.0.0"), 8084);
                 TcpListener listenerForMedics = new TcpListener(IPAddress.Parse("0.0.0.0"), 8085);
+
                 listenerForPeople.Start();
                 listenerForMedics.Start();
-
 
                 Task peopleTask = Task.Run(() =>
                 {
@@ -53,19 +57,27 @@ namespace SocketServer
         public async static Task handle_person(TcpClient tcpClient)
         {
             PersonClient personClient = null;
+            X509Certificate2 serverCertificate = null;
             try
             {
-                Thread.Sleep(1000);
+                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/keystore_server.p12", "sigurnost",
+                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+            start:
                 personClient = new PersonClient();
-                personClient.CurrentClient = tcpClient;
                 MedicClient sagovornik = null;
-                NetworkStream stream = tcpClient.GetStream();
 
+                SslStream sslStream = new SslStream(
+                tcpClient.GetStream());
+                // Authenticate the server but don't require the client to authenticate.
+
+                await sslStream.AuthenticateAsServerAsync(serverCertificate);
+
+                personClient.CurrentClient = (tcpClient, sslStream);
                 // token
                 while (true)
                 {
                     byte[] buffer = new byte[1024];
-                    int byte_count = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    int byte_count = await sslStream.ReadAsync(buffer, 0, buffer.Length);
 
                     if (byte_count == 0)
                     {
@@ -90,32 +102,35 @@ namespace SocketServer
                         break;
                     }
                     Console.WriteLine("cekanje medica");
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
                 }
 
                 while (true)
                 {
-                    Thread.Sleep(500);
                     Console.WriteLine("razgovor");
 
-                    NetworkStream streamSagovornik = sagovornik.CurrentClient.GetStream();
+                    SslStream sagovornikSslStream = sagovornik.CurrentClient.Item2;
 
                     string data = "";
                     byte[] buffer = new byte[1024];
-                    int byte_count = await streamSagovornik.ReadAsync(buffer, 0, buffer.Length);
+                    int byte_count = await sagovornikSslStream.ReadAsync(buffer, 0, buffer.Length);
 
                     data = Encoding.UTF8.GetString(buffer, 0, byte_count);
 
-                    buffer = Encoding.UTF8.GetBytes($"[{DateTime.Now:dd.MM.yyyy HH:MM:ss}]\n[Medic]: {data}");
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                    buffer = Encoding.UTF8.GetBytes($"{data}");
+                    await sslStream.WriteAsync(buffer, 0, buffer.Length);
 
                     Console.WriteLine("[Medic]: " + data);
 
-                    if (data == "END")
+                    if (data.StartsWith("END"))
                     {
+                        sagovornik.PersonClient = null;
+                        personClient.MedicClient = null;
+                        personClient.CurrentClient = (null,null);
                         break;
                     }
                 }
+                goto start;
             }
             catch (Exception e)
             {
@@ -138,14 +153,23 @@ namespace SocketServer
         {
             MedicClient medicClient = null;
             PersonClient personClient = null;
+            X509Certificate2 serverCertificate = null;
             try
             {
-                Thread.Sleep(1000);
+                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/keystore_server.p12", "sigurnost",
+                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+
+            start:
                 medicClient = new MedicClient();
-                medicClient.CurrentClient = tcpClient;
+
                 freeMedicsQueue.Enqueue(medicClient);
 
-                NetworkStream stream = tcpClient.GetStream();
+                SslStream sslStream = new SslStream(
+                tcpClient.GetStream());
+
+                await sslStream.AuthenticateAsServerAsync(serverCertificate);
+
+                medicClient.CurrentClient = (tcpClient, sslStream);
 
                 while (true)
                 {
@@ -158,29 +182,30 @@ namespace SocketServer
                         }
                     }
                     Console.WriteLine("cekanje osobe");
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
                 }
 
                 while (medicClient.PersonClient != null)
                 {
-                    NetworkStream personStream = personClient.CurrentClient.GetStream();
+                    SslStream personSslStream = personClient.CurrentClient.Item2;
 
                     string data = "";
                     byte[] buffer = new byte[1024];
-                    int byte_count = await personStream.ReadAsync(buffer, 0, buffer.Length);
-                   
+                    int byte_count = await personSslStream.ReadAsync(buffer, 0, buffer.Length);
+
                     data = Encoding.UTF8.GetString(buffer, 0, byte_count);
 
                     Console.WriteLine("[Person]: " + data);
 
-                    buffer = Encoding.UTF8.GetBytes($"[{DateTime.Now:dd.MM.yyyy HH:MM:ss}]\n[{personClient.Token}]: {data}");
-                    await stream.WriteAsync(buffer, 0, buffer.Length);
+                    buffer = Encoding.UTF8.GetBytes($"{data}");
+                    await sslStream.WriteAsync(buffer, 0, buffer.Length);
 
-                    if (data == "END")
+                    if (data.StartsWith("END"))
                     {
                         break;
                     }
                 }
+                goto start;
             }
             catch (Exception e)
             {
@@ -194,6 +219,7 @@ namespace SocketServer
                 tcpClient.Close();
             }
         }
+
         /*public static void broadcast(string data)
         {
             byte[] buffer = Encoding.UTF8.GetBytes(data + Environment.NewLine);
