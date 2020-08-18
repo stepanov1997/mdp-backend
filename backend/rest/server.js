@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const userRoutes = require('./routes/userRoutes');
 const typeUserRoutes = require('./routes/typeUserRoutes');
 const locationRoutes = require('./routes/locationRoutes');
+const notificationsRoutes = require('./routes/notificationsRoutes');
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/users', userRoutes);
 app.use('/api/userTypes', typeUserRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/notifications', notificationsRoutes)
 app.set('json spaces', 2)
 
 // Set up mongoose connection

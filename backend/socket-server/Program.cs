@@ -62,15 +62,12 @@ namespace SocketServer
             {
                 serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/keystore_server.p12", "sigurnost",
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
-            start:
+
+                SslStream sslStream = new SslStream(tcpClient.GetStream());
+                await sslStream.AuthenticateAsServerAsync(serverCertificate);
+
                 personClient = new PersonClient();
                 MedicClient sagovornik = null;
-
-                SslStream sslStream = new SslStream(
-                tcpClient.GetStream());
-                // Authenticate the server but don't require the client to authenticate.
-
-                await sslStream.AuthenticateAsServerAsync(serverCertificate);
 
                 personClient.CurrentClient = (tcpClient, sslStream);
                 // token
@@ -96,9 +93,12 @@ namespace SocketServer
                 {
                     if (freeMedicsQueue.Count > 0)
                     {
-                        sagovornik = freeMedicsQueue.Dequeue();
-                        personClient.MedicClient = sagovornik;
-                        sagovornik.PersonClient = personClient;
+                        lock (_lock)
+                        {
+                            sagovornik = freeMedicsQueue.Dequeue();
+                            personClient.MedicClient = sagovornik;
+                            sagovornik.PersonClient = personClient;
+                        }
                         break;
                     }
                     Console.WriteLine("cekanje medica");
@@ -124,18 +124,17 @@ namespace SocketServer
 
                     if (data.StartsWith("END"))
                     {
-                        sagovornik.PersonClient = null;
-                        personClient.MedicClient = null;
-                        personClient.CurrentClient = (null,null);
+                        lock (_lock)
+                        {
+                            
+                        }
                         break;
                     }
                 }
-                goto start;
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine("Client ended session.");
+                Console.WriteLine("Client ended session. Token: "+personClient.Token);
                 return;
             }
             finally
@@ -143,6 +142,9 @@ namespace SocketServer
                 if (personClient?.Token != null)
                 {
                     lock (_lock) list_clients.Remove(personClient.Token);
+                    if(personClient.MedicClient!=null)
+                        personClient.MedicClient.PersonClient = null;
+                    personClient.MedicClient = null;
                 }
                 tcpClient.Client.Shutdown(SocketShutdown.Both);
                 tcpClient.Close();
@@ -159,57 +161,49 @@ namespace SocketServer
                 serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/keystore_server.p12", "sigurnost",
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
 
-            start:
-                medicClient = new MedicClient();
-
-                freeMedicsQueue.Enqueue(medicClient);
-
-                SslStream sslStream = new SslStream(
-                tcpClient.GetStream());
-
+                SslStream sslStream = new SslStream(tcpClient.GetStream());
                 await sslStream.AuthenticateAsServerAsync(serverCertificate);
 
-                medicClient.CurrentClient = (tcpClient, sslStream);
+                medicClient = new MedicClient();
 
                 while (true)
                 {
-                    lock (_lock)
+                    freeMedicsQueue.Enqueue(medicClient);
+                    medicClient.CurrentClient = (tcpClient, sslStream);
+
+                    while (true)
                     {
-                        if (medicClient.PersonClient != null)
+                        lock (_lock)
                         {
-                            personClient = medicClient.PersonClient;
-                            break;
+                            if (medicClient.PersonClient != null)
+                            {
+                                personClient = medicClient.PersonClient;
+                                break;
+                            }
                         }
+                        Console.WriteLine("cekanje osobe");
+                        await Task.Delay(1000);
                     }
-                    Console.WriteLine("cekanje osobe");
-                    await Task.Delay(1000);
-                }
 
-                while (medicClient.PersonClient != null)
-                {
-                    SslStream personSslStream = personClient.CurrentClient.Item2;
-
-                    string data = "";
-                    byte[] buffer = new byte[1024];
-                    int byte_count = await personSslStream.ReadAsync(buffer, 0, buffer.Length);
-
-                    data = Encoding.UTF8.GetString(buffer, 0, byte_count);
-
-                    Console.WriteLine("[Person]: " + data);
-
-                    buffer = Encoding.UTF8.GetBytes($"{data}");
-                    await sslStream.WriteAsync(buffer, 0, buffer.Length);
-
-                    if (data.StartsWith("END"))
+                    while (medicClient.PersonClient != null)
                     {
-                        break;
+                        SslStream personSslStream = personClient.CurrentClient.Item2;
+
+                        string data = "";
+                        byte[] buffer = new byte[1024];
+                        int byte_count = await personSslStream.ReadAsync(buffer, 0, buffer.Length);
+
+                        data = Encoding.UTF8.GetString(buffer, 0, byte_count);
+
+                        Console.WriteLine("[Person]: " + data);
+
+                        buffer = Encoding.UTF8.GetBytes($"{data}");
+                        await sslStream.WriteAsync(buffer, 0, buffer.Length);
                     }
                 }
-                goto start;
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.StackTrace);
                 Console.WriteLine("Client ended session.");
                 return;
             }
@@ -219,20 +213,5 @@ namespace SocketServer
                 tcpClient.Close();
             }
         }
-
-        /*public static void broadcast(string data)
-        {
-            byte[] buffer = Encoding.UTF8.GetBytes(data + Environment.NewLine);
-
-            lock (_lock)
-            {
-                foreach (TcpClient c in list_clients.Values)
-                {
-                    NetworkStream stream = c.GetStream();
-
-                    stream.Write(buffer, 0, buffer.Length);
-                }
-            }
-        }*/
     }
 }
