@@ -5,4 +5,6 @@ const router = express.Router();
 router.route('/')
     .get(notificationsController.listNotifications)
 router.route('/:token')
-    .get(notificationsController.listLocationsByToken)
+    .get(notificationsController.listNotificationsByToken)
+
+module.exports = router

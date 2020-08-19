@@ -17,6 +17,14 @@ const getDateTimeFromString = (dateTimeString) => {
     return {}
 }
 
+const substractDateTimes = (dateTimeString1, dateTimeString2) => {
+    let dateTime1 = getDateTimeFromString(dateTimeString1);
+    let dateTime2 = getDateTimeFromString(dateTimeString2);
+    let date1 = new Date(dateTime1.year, dateTime1.month, dateTime1.day, dateTime1.hours, dateTime1.minutes, dateTime1.seconds).getTime();
+    let date2 = new Date(dateTime2.year, dateTime2.month, dateTime2.day, dateTime2.hours, dateTime2.minutes, dateTime2.seconds).getTime();
+    return date2 - date1;
+}
+
 const compareToDateTimes = (dateTimeString1, dateTimeString2) => {
     let dateTime1 = getDateTimeFromString(dateTimeString1);
     let dateTime2 = getDateTimeFromString(dateTimeString2);
@@ -74,8 +82,10 @@ const calculateDuranceBetweenTwoDateTimes = (firstFrom, firstTo, secondFrom, sec
     if (compareToDateTimes(secondFrom, firstTo) === 1 ||
         compareToDateTimes(firstFrom, secondTo) === 1)
         return 0;
-    return minDateTime(firstTo, secondTo) -
-        maxDateTime(firstFrom, secondFrom);
+    let min = minDateTime(firstTo, secondTo);
+    let max = maxDateTime(firstFrom, secondFrom);
+    return substractDateTimes(min,max);
+
 }
 
 module.exports = {
