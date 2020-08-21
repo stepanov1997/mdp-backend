@@ -60,7 +60,7 @@ namespace SocketServer
             X509Certificate2 serverCertificate = null;
             try
             {
-                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/keystore_server.p12", "sigurnost",
+                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/backend/socket-server/bin/Debug/netcoreapp3.1/keystore_server.p12", "sigurnost",
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
 
                 SslStream sslStream = new SslStream(tcpClient.GetStream());
@@ -101,7 +101,6 @@ namespace SocketServer
                         }
                         break;
                     }
-                    Console.WriteLine("cekanje medica");
                     await Task.Delay(1000);
                 }
 
@@ -132,7 +131,7 @@ namespace SocketServer
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.WriteLine("Client ended session. Token: "+personClient.Token);
                 return;
@@ -158,7 +157,7 @@ namespace SocketServer
             X509Certificate2 serverCertificate = null;
             try
             {
-                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/keystore_server.p12", "sigurnost",
+                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/backend/socket-server/bin/Debug/netcoreapp3.1/keystore_server.p12", "sigurnost",
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
 
                 SslStream sslStream = new SslStream(tcpClient.GetStream());
@@ -181,7 +180,6 @@ namespace SocketServer
                                 break;
                             }
                         }
-                        Console.WriteLine("cekanje osobe");
                         await Task.Delay(1000);
                     }
 
@@ -202,7 +200,7 @@ namespace SocketServer
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.WriteLine("Client ended session.");
                 return;

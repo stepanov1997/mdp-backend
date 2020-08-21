@@ -95,13 +95,13 @@ public class FileServer implements IFileServer { // 1
 
     public static void main(String[] args) {
         System.setProperty("java.security.policy", "server.policy");
-        System.setProperty("java.rmi.server.hostname", "0.0.0.0");
+        System.setProperty("java.rmi.server.hostname", "pisio.etfbl.net");
         try {
             String name = "FileServer";
             FileServer srv = new FileServer(); // 3
             IFileServer stub = (IFileServer) UnicastRemoteObject.exportObject(srv, 0); // 4
             LocateRegistry.createRegistry(1099); // 5
-            Naming.rebind("//0.0.0.0/" + name, stub); // 6
+            Naming.rebind("//pisio.etfbl.net/" + name, stub); // 6
             System.out.println("File server is ready!");
         } catch (Exception e) {
             System.err.println("FileServer exception:");

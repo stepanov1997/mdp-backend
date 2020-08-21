@@ -69,3 +69,5 @@ use db
 db.user.find().pretty()
 db.User.find()
 exit()
+use db
+db.notifications.find().pretty()
