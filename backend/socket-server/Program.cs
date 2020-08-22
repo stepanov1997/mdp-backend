@@ -9,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.IO;
 using Microsoft.Extensions.Logging;
 using System.Configuration;
+using System.Linq;
 
 namespace SocketServer
 {
@@ -69,7 +70,9 @@ namespace SocketServer
             X509Certificate2 serverCertificate = null;
             try
             {
-                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/backend/socket-server/bin/Debug/netcoreapp3.1/keystore_server.p12", "sigurnost",
+                serverCertificate = new X509Certificate2(
+                    ConfigurationManager.AppSettings["keystorePath"], 
+                    ConfigurationManager.AppSettings["keystorePassword"],
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
 
                 SslStream sslStream = new SslStream(tcpClient.GetStream());
@@ -133,10 +136,13 @@ namespace SocketServer
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                logger.LogWarning("Client ended session. Token: " + personClient.Token);
-               
+                logger.LogWarning(e.Message);
+            }
+            finally
+            {
+                logger.LogInformation("Client ended session.");
                 if (personClient?.Token != null)
                 {
                     lock (_lock) list_clients.Remove(personClient.Token);
@@ -146,7 +152,6 @@ namespace SocketServer
                 }
                 tcpClient.Client.Shutdown(SocketShutdown.Both);
                 tcpClient.Close();
-                return;
             }
         }
 
@@ -157,54 +162,55 @@ namespace SocketServer
             X509Certificate2 serverCertificate = null;
             try
             {
-                serverCertificate = new X509Certificate2(Path.GetFullPath(".") + "/backend/socket-server/bin/Debug/netcoreapp3.1/keystore_server.p12", "sigurnost",
+                serverCertificate = new X509Certificate2(
+                    ConfigurationManager.AppSettings["keystorePath"],
+                    ConfigurationManager.AppSettings["keystorePassword"],
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
 
                 SslStream sslStream = new SslStream(tcpClient.GetStream());
                 await sslStream.AuthenticateAsServerAsync(serverCertificate);
-
                 medicClient = new MedicClient();
+
+                freeMedicsQueue.Enqueue(medicClient);
+                medicClient.CurrentClient = (tcpClient, sslStream);
 
                 while (true)
                 {
-                    freeMedicsQueue.Enqueue(medicClient);
-                    medicClient.CurrentClient = (tcpClient, sslStream);
-
-                    while (true)
+                    if (medicClient.PersonClient != null)
                     {
-                        lock (_lock)
-                        {
-                            if (medicClient.PersonClient != null)
-                            {
-                                personClient = medicClient.PersonClient;
-                                break;
-                            }
-                        }
-                        await Task.Delay(1000);
+                        personClient = medicClient.PersonClient;
+                        break;
                     }
+                    await Task.Delay(1000);
+                }
 
-                    while (medicClient.PersonClient != null)
+                while (medicClient.PersonClient != null)
+                {
+                    SslStream personSslStream = personClient.CurrentClient.Item2;
+
+                    string data = "";
+                    byte[] buffer = new byte[1024];
+                    int byte_count = await personSslStream.ReadAsync(buffer, 0, buffer.Length);
+
+                    data = Encoding.UTF8.GetString(buffer, 0, byte_count);
+
+                    buffer = Encoding.UTF8.GetBytes($"{data}");
+                    await sslStream.WriteAsync(buffer, 0, buffer.Length);
+
+                    if (data.StartsWith("END"))
                     {
-                        SslStream personSslStream = personClient.CurrentClient.Item2;
-
-                        string data = "";
-                        byte[] buffer = new byte[1024];
-                        int byte_count = await personSslStream.ReadAsync(buffer, 0, buffer.Length);
-
-                        data = Encoding.UTF8.GetString(buffer, 0, byte_count);
-
-                        buffer = Encoding.UTF8.GetBytes($"{data}");
-                        await sslStream.WriteAsync(buffer, 0, buffer.Length);
+                        break;
                     }
                 }
             }
             catch (Exception e)
             {
-                logger.LogError(e.StackTrace);
-                Console.WriteLine("Client ended session.");
+                logger.LogError(e.Message);
+            }
+            finally
+            {
                 tcpClient.Client.Shutdown(SocketShutdown.Both);
                 tcpClient.Close();
-                return;
             }
         }
     }

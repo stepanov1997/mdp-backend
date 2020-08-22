@@ -16,17 +16,16 @@ app.set('json spaces', 2)
 
 // Set up mongoose connection
 const mongoose = require('mongoose');
-let dev_db_url = 'mongodb://127.0.0.1:27017/db?gssapiServiceName=mongodb';
+let dev_db_url = require('./config.json').mongoDbServer;
 const mongoDB = process.env.MONGODB_URI || dev_db_url;
 mongoose.connect(mongoDB);
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-const server = app.listen(8081, function () {
-	const host = server.address().address;
+const server = app.listen(require('./config.json').restPort, function () {
 	const port = server.address().port;
-	console.log("Example app listening at http://%s:%s", host, port)
+	console.log("Central register started... Listening requests on port "+port)
 });
 
 module.exports = app;

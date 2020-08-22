@@ -2,7 +2,10 @@
   "params": {
     "n": 10,
     "p": 15,
-    "k": 50000
+    "k": 50000,
+    "days": 5
   },
-  "tokenServer": "http://127.0.0.1:8083/soap?wsdl"
+  "tokenServer": "http://127.0.0.1:8083/soap?wsdl",
+  "mongoDbServer": "mongodb://127.0.0.1:27017/db?gssapiServiceName=mongodb",
+  "restPort": 8081
 }

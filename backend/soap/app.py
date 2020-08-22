@@ -3,6 +3,7 @@ from flask import Flask
 from flaskext.enterprise import Enterprise
 from controller import user_controller
 from mongoengine import *
+import config
 
 app = Flask(__name__)
 
@@ -40,5 +41,6 @@ class DemoService(enterprise.SOAPService):
         listTokens = user_controller.getActiveTokens()
         return listTokens
 
+
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8083)
+    app.run(host=config.SOAP_HOST, port=config.SOAP_PORT)

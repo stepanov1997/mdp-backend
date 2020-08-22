@@ -1,11 +1,15 @@
 const Location = require("../model/location");
+const {lastNDays} = require("../util/dateUtil");
+const {getDateTimeFromString} = require("../util/dateUtil");
 const {checkToken} = require("../util/checkToken");
 const {log} = require("../util/logging");
+const config = require("../config.json");
 
 const listLocations = async(req, res) => {
     log("INFO", "List location.")
     try {
-        res.json(await Location.find({}).exec());
+        let locations = await Location.find({}).exec();
+        res.json(locations);
     } catch (e) {
         log("WARNING", "listLocations", e.stack)
         res.header("Content-Type", 'application/json');
@@ -85,7 +89,7 @@ const listLocationsByToken = async(req, res) => {
     log("INFO", "List location by token.")
     try {
         const locations = await Location.find({ token: { $regex: req.params.token, $options: 'i' } }).exec();
-        res.json(locations);
+        res.json(locations.filter(elem => lastNDays(elem.dateTime, config.params.days)));
     } catch (e) {
         log("WARNING", "List location by token", e.stack)
         res.status(404).send({ error: "boo:(" });
