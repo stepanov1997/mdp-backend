@@ -1,6 +1,6 @@
 bash /home/kristijans/backend/stop-all.sh
 sleep 3
-mongod --storageEngine inMemory --dbpath /home/kristijans/backend/database/data &
+/home/kristijans/backend/database/data &
 sleep 3
 node /home/kristijans/backend/rest/server.js &
 sleep 3

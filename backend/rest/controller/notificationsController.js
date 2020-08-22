@@ -5,6 +5,7 @@ const config = require("../config.json");
 const {calculateDuranceBetweenTwoDateTimes, maxDateTime, minDateTime} = require("../util/dateUtil");
 const {isUndefined} = require("core-util-is");
 const {isNull} = require("core-util-is");
+const {log} = require("../util/logging");
 
 setInterval(async () => {
     let locations = await Location.find({}).exec();
@@ -83,6 +84,7 @@ setInterval(async () => {
                 if (isUndefined(same)) {
                     notification.queue.push(notif);
                     notification.save();
+                    log("INFO", "Added new potential infected.")
                 }
             }
         }
@@ -90,18 +92,20 @@ setInterval(async () => {
 }, config.params.n * 1000)
 
 const listNotifications = async (req, res) => {
+    log("INFO", "List notifications.")
     try {
         let allNotifications = await Notification.find({}).exec()
         let notificationsFormatted = allNotifications.flatMap(elem => elem.queue)
         res.json(notificationsFormatted);
     } catch (e) {
-        console.log(e)
+        log("WARNING", "List notifications", e.stack)
         res.header("Content-Type", 'application/json');
         res.status(404).send({error: "boo:("});
     }
 }
 
 const listNotificationsByToken = async (req, res) => {
+    log("INFO", "List notifications by token.")
     try {
         let token = req.params.token;
         let notificationsByToken = await Notification.find({token: token}).exec();
@@ -114,13 +118,14 @@ const listNotificationsByToken = async (req, res) => {
             res.json([])
         }
     } catch (e) {
-        console.log(e)
+        log("WARNING", "List notifications by token", e.stack)
         res.header("Content-Type", 'application/json');
         res.status(404).send({error: "boo:("});
     }
 }
 
 const addNotificationForMedic = async ({token, infection}) => {
+    log("INFO", "Adding notifications for medic.")
     let notification = await Notification.find({token: token}).exec();
     if (notification.length === 0) {
         notification = new Notification({

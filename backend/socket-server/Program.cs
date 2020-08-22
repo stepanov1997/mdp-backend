@@ -3,14 +3,12 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
-using System.Linq;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Authentication;
 using System.IO;
+using Microsoft.Extensions.Logging;
+using System.Configuration;
 
 namespace SocketServer
 {
@@ -20,13 +18,24 @@ namespace SocketServer
         static readonly Dictionary<string, PersonClient> list_clients = new Dictionary<string, PersonClient>();
         static readonly Queue<MedicClient> freeMedicsQueue = new Queue<MedicClient>();
 
+        static ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        static ILogger logger = loggerFactory.CreateLogger<Program>();
+
         static void Main(string[] args)
         {
             Task.Run(async () =>
             {
-                TcpListener listenerForPeople = new TcpListener(IPAddress.Parse("0.0.0.0"), 8084);
-                TcpListener listenerForMedics = new TcpListener(IPAddress.Parse("0.0.0.0"), 8085);
+                logger.LogInformation("Server started...");
+                logger.LogInformation("Waiting for clients...");
+                int portForPeople = 8084;
+                int portForMedics = 8085;
+                if (!int.TryParse(ConfigurationManager.AppSettings["PeoplePort"], out portForPeople))
+                    portForPeople = 8084;
+                if (!int.TryParse(ConfigurationManager.AppSettings["MedicsPort"], out portForMedics))
+                    portForMedics = 8085;
 
+                TcpListener listenerForPeople = new TcpListener(IPAddress.Parse("0.0.0.0"), portForPeople);
+                TcpListener listenerForMedics = new TcpListener(IPAddress.Parse("0.0.0.0"), portForMedics);
                 listenerForPeople.Start();
                 listenerForMedics.Start();
 
@@ -36,7 +45,7 @@ namespace SocketServer
                     {
                         TcpClient client = listenerForPeople.AcceptTcpClient();
                         NetworkStream stream = client.GetStream();
-                        Console.WriteLine("Someone connected!!");
+                        logger.LogInformation("Someone connected!!");
                         Task.Run(async () => await handle_person(client));
                     }
                 });
@@ -46,7 +55,7 @@ namespace SocketServer
                     {
                         TcpClient client = listenerForMedics.AcceptTcpClient();
                         NetworkStream stream = client.GetStream();
-                        Console.WriteLine("Medic connected!!");
+                        logger.LogInformation("Medic connected!!");
                         Task.Run(async () => await handle_medic(client));
                     }
                 });
@@ -82,7 +91,6 @@ namespace SocketServer
                     }
                     string data = Encoding.UTF8.GetString(buffer, 0, byte_count);
 
-                    Console.WriteLine(data);
                     personClient.Token = data;
 
                     lock (_lock) list_clients.Add(personClient.Token, personClient);
@@ -119,34 +127,26 @@ namespace SocketServer
                     buffer = Encoding.UTF8.GetBytes($"{data}");
                     await sslStream.WriteAsync(buffer, 0, buffer.Length);
 
-                    Console.WriteLine("[Medic]: " + data);
-
                     if (data.StartsWith("END"))
                     {
-                        lock (_lock)
-                        {
-                            
-                        }
                         break;
                     }
                 }
             }
             catch (Exception)
             {
-                Console.WriteLine("Client ended session. Token: "+personClient.Token);
-                return;
-            }
-            finally
-            {
+                logger.LogWarning("Client ended session. Token: " + personClient.Token);
+               
                 if (personClient?.Token != null)
                 {
                     lock (_lock) list_clients.Remove(personClient.Token);
-                    if(personClient.MedicClient!=null)
+                    if (personClient.MedicClient != null)
                         personClient.MedicClient.PersonClient = null;
                     personClient.MedicClient = null;
                 }
                 tcpClient.Client.Shutdown(SocketShutdown.Both);
                 tcpClient.Close();
+                return;
             }
         }
 
@@ -193,22 +193,18 @@ namespace SocketServer
 
                         data = Encoding.UTF8.GetString(buffer, 0, byte_count);
 
-                        Console.WriteLine("[Person]: " + data);
-
                         buffer = Encoding.UTF8.GetBytes($"{data}");
                         await sslStream.WriteAsync(buffer, 0, buffer.Length);
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                logger.LogError(e.StackTrace);
                 Console.WriteLine("Client ended session.");
-                return;
-            }
-            finally
-            {
                 tcpClient.Client.Shutdown(SocketShutdown.Both);
                 tcpClient.Close();
+                return;
             }
         }
     }

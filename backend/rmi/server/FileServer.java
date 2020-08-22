@@ -12,9 +12,12 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class FileServer implements IFileServer { // 1
+    private static final Logger LOGGER = Logger.getLogger(FileServer.class.getName());
 
     public FileServer() throws RemoteException {
         super();
@@ -37,6 +40,7 @@ public class FileServer implements IFileServer { // 1
                     );
             return collect;
         } catch (NullPointerException ex) {
+            LOGGER.log(Level.WARNING, "No files.", ex);
             return new HashMap<>();
         }
     }
@@ -55,7 +59,7 @@ public class FileServer implements IFileServer { // 1
             raf.seek(offset);
             raf.write(data, 0, data.length);
         } catch (IOException ex) {
-            System.out.println("Failed file write: " + filename);
+            LOGGER.log(Level.WARNING, "Cannot write file...", ex);
             return false;
         }
 
@@ -72,7 +76,7 @@ public class FileServer implements IFileServer { // 1
             raf.seek(offset);
             raf.read(buffer, 0, count);
         } catch (IOException ex) {
-            System.out.println("Failed file read: " + filename);
+            LOGGER.log(Level.WARNING, "Cannot read file...", ex);
             return null;
         }
         return buffer;
@@ -83,11 +87,12 @@ public class FileServer implements IFileServer { // 1
         try {
             Application_PortType apt = asl.getApplication();
             if (apt.checkToken(token) == null) {
+                LOGGER.log(Level.WARNING, "Token is not valid.");
                 System.out.println("Token is not valid.");
                 return false;
             }
         } catch (RemoteException | ServiceException e) {
-            System.out.println("Token is not valid.");
+            LOGGER.log(Level.WARNING, "Token server is offline.", e);
             return false;
         }
         return true;
@@ -95,17 +100,16 @@ public class FileServer implements IFileServer { // 1
 
     public static void main(String[] args) {
         System.setProperty("java.security.policy", "server.policy");
-        System.setProperty("java.rmi.server.hostname", "pisio.etfbl.net");
+        System.setProperty("java.rmi.server.hostname", "127.0.0.1");
         try {
             String name = "FileServer";
             FileServer srv = new FileServer(); // 3
             IFileServer stub = (IFileServer) UnicastRemoteObject.exportObject(srv, 0); // 4
             LocateRegistry.createRegistry(1099); // 5
-            Naming.rebind("//pisio.etfbl.net/" + name, stub); // 6
-            System.out.println("File server is ready!");
+            Naming.rebind("//127.0.0.1/" + name, stub); // 6
+            LOGGER.log(Level.INFO, "File server is ready!");
         } catch (Exception e) {
-            System.err.println("FileServer exception:");
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "File server can't start.", e);
         }
     }
 }

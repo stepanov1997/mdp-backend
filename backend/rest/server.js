@@ -1,19 +1,17 @@
 const express = require('express');
-const bodyParser = require('body-parser')
-const userRoutes = require('./routes/userRoutes');
+const bodyParser = require('body-parser');
 const typeUserRoutes = require('./routes/typeUserRoutes');
 const locationRoutes = require('./routes/locationRoutes');
-const notificationsRoutes = require('./routes/notificationRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/api/users', userRoutes);
 app.use('/api/userTypes', typeUserRoutes);
 app.use('/api/locations', locationRoutes);
-app.use('/api/notifications', notificationsRoutes)
+app.use('/api/notifications', notificationRoutes)
 app.set('json spaces', 2)
 
 // Set up mongoose connection
@@ -25,10 +23,10 @@ mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-var server = app.listen(8081, function () {
-	var host = server.address().address
-	var port = server.address().port
+const server = app.listen(8081, function () {
+	const host = server.address().address;
+	const port = server.address().port;
 	console.log("Example app listening at http://%s:%s", host, port)
-})
+});
 
 module.exports = app;

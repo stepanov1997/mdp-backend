@@ -1,6 +1,6 @@
 [ {
-  "version" : "6.6-20200819230304+0000",
-  "buildTime" : "20200819230304+0000",
+  "version" : "6.6-20200821235514+0000",
+  "buildTime" : "20200821235514+0000",
   "current" : false,
   "snapshot" : true,
   "nightly" : false,
@@ -9,12 +9,12 @@
   "rcFor" : "",
   "milestoneFor" : "",
   "broken" : false,
-  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.6-20200819230304+0000-bin.zip",
-  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.6-20200819230304+0000-bin.zip.sha256",
-  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.6-20200819230304+0000-wrapper.jar.sha256"
+  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.6-20200821235514+0000-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.6-20200821235514+0000-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.6-20200821235514+0000-wrapper.jar.sha256"
 }, {
-  "version" : "6.7-20200819220136+0000",
-  "buildTime" : "20200819220136+0000",
+  "version" : "6.7-20200821220031+0000",
+  "buildTime" : "20200821220031+0000",
   "current" : false,
   "snapshot" : true,
   "nightly" : true,
@@ -23,9 +23,9 @@
   "rcFor" : "",
   "milestoneFor" : "",
   "broken" : false,
-  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.7-20200819220136+0000-bin.zip",
-  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.7-20200819220136+0000-bin.zip.sha256",
-  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.7-20200819220136+0000-wrapper.jar.sha256"
+  "downloadUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.7-20200821220031+0000-bin.zip",
+  "checksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.7-20200821220031+0000-bin.zip.sha256",
+  "wrapperChecksumUrl" : "https://services.gradle.org/distributions-snapshots/gradle-6.7-20200821220031+0000-wrapper.jar.sha256"
 }, {
   "version" : "6.6",
   "buildTime" : "20200810220619+0000",

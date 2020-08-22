@@ -1,19 +1,27 @@
 const Location = require("../model/location");
 const UserType = require("../model/userType");
+const notificationsController = require("./notificationsController");
+const {log} = require("../util/logging");
+const soap = require('soap');
+const {checkToken} = require("../util/checkToken");
+const {tokenServer} = require("../config.json")
 
 const listUserTypes = async(req, res) => {
+    log("INFO", "List user types.")
     try {
         res.json(await UserType.find({}).exec());
     } catch (e) {
-        console.log(e)
+        log("WARNING", "List user types", e.stack)
         res.header("Content-Type", 'application/json');
         res.status(404).send({ error: "boo:(" });
     }
 }
 
 const addUserType = async(req, res) => {
+    log("INFO", "Adding user type.")
     const exists = (await checkToken(req.body.token)).checkTokenResult;
     if (!exists) {
+        log("WARNING", "Token is bad.")
         res.status(404).send({ error: "Token is not OK!" });
         return;
     }
@@ -30,78 +38,68 @@ const addUserType = async(req, res) => {
     }
     try {
         await userType.save();
+        if(userType.userType !== "Not infected")
+        await notificationsController.addNotificationForMedic({
+            token: req.body.token,
+            infection: userType.userType
+        })
         res.json(await UserType.findById(userType.id).exec());
-        console.log('save')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Adding user type.", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 
 const readUserType = async(req, res) => {
+    log("INFO", "Reading user type.")
     try {
         const result = await UserType.find({ token: req.params.token }).exec();
         res.json(result);
-        console.log('read')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Read user type", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 const updateUserType = async(req, res) => {
+    log("INFO", "Updating user type.")
     try {
         await UserType.findByIdAndUpdate(req.params.userTypeId, { $set: req.body }).exec();
         res.json(await UserType.findById(req.params.userId).exec());
-        console.log('update')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Update user type", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 const deleteUserType = async(req, res) => {
+    log("INFO", "Deleting user type.")
     try {
-        await user.findByIdAndDelete(req.params.userTypeId).exec();
-        res.json(await User.findById(req.params.userTypeId).exec());
+        await UserType.findByIdAndDelete(req.params.userTypeId).exec();
+        res.json(await UserType.findById(req.params.userTypeId).exec());
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Deleting user type", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 const UserTypeById = async(req, res) => {
+    log("INFO", "Reading user type by id.")
     try {
         await UserType.findById(req.params.userTypeId).exec();
-        res.json(await User.findById(req.params.userTypeId).exec());
-        console.log('findById')
+        res.json(await UserType.findById(req.params.userTypeId).exec());
     } catch (e) {
-        console.log(e)
+        log("WARNING", "User type by id.", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 
 const listTypesByToken = async(req, res) => {
+    log("INFO", "List user types by token.")
     try {
         const types = await UserType.find({ token: { $regex: req.params.token, $options: 'i' } }).exec();
-        console.log(JSON.stringify(types))
         res.json(types);
-        console.log('findByToken')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "List types by token.", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
-}
-
-const checkToken = (token) => {
-    var soap = require('soap');
-    var url = 'http://127.0.0.1:8083/soap?wsdl';
-    var args = { token: token };
-    return new Promise((resolve, reject) => {
-        soap.createClient(url, (err, client) => {
-            client.checkToken(args, (err, result, body) => {
-                return resolve(result)
-            })
-        });
-    });
-
 }
 
 

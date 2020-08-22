@@ -8,7 +8,7 @@ let UserTypeSchema = new Schema({
     userType: {
         type: String,
         validate: {
-            validator: (elem) => types.some((type) => elem == type),
+            validator: (elem) => types.some((type) => elem === type),
             message: props => `${props.value} is not a valid type of person! (Not infected, Potential infected or Infected)`
           },
           required: [true, 'Type required (\'Not infected\', \'Potential infectedv or \'Infected\')']

@@ -1,17 +1,20 @@
 const Location = require("../model/location");
-
+const {checkToken} = require("../util/checkToken");
+const {log} = require("../util/logging");
 
 const listLocations = async(req, res) => {
+    log("INFO", "List location.")
     try {
         res.json(await Location.find({}).exec());
     } catch (e) {
-        console.log(e)
+        log("WARNING", "listLocations", e.stack)
         res.header("Content-Type", 'application/json');
         res.status(404).send({ error: "boo:(" });
     }
 }
 
 const addLocation = async(req, res) => {
+    log("INFO", "Add location.")
     const exists = (await checkToken(req.body.token)).checkTokenResult;
     if (!exists) {
         res.status(404).send({ error: "Token is not OK!" });
@@ -21,76 +24,72 @@ const addLocation = async(req, res) => {
     try {
         await location.save();
         res.json(await Location.findById(location.id).exec());
-        console.log('save')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Add location", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 
 const readLocation = async(req, res) => {
+    log("INFO", "Read location.")
     try {
         const result = await Location.find({ token: req.params.token }).exec();
         res.json(result);
-        console.log('read')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Read location", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 const updateLocation = async(req, res) => {
+    log("INFO", "Update location.")
+    const exists = (await checkToken(req.body.token)).checkTokenResult;
+    if (!exists) {
+        res.status(404).send({ error: "Token is not OK!" });
+        return;
+    }
     try {
         await Location.findByIdAndUpdate(req.params.locationId, { $set: req.body }).exec();
         res.json(await Location.findById(req.params.locationId).exec());
-        console.log('update')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Update location", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 const deleteLocation = async(req, res) => {
+    log("INFO", "Delete location.")
+    const exists = (await checkToken(req.body.token)).checkTokenResult;
+    if (!exists) {
+        res.status(404).send({ error: "Token is not OK!" });
+        return;
+    }
     try {
         await Location.findByIdAndDelete(req.params.locationId).exec();
         res.json(await Location.findById(req.params.locationId).exec());
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Delete location", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 const locationById = async(req, res) => {
+    log("INFO", "Find location by id.")
     try {
         await Location.findById(req.params.locationId).exec();
         res.json(await Location.findById(req.params.locationId).exec());
-        console.log('findById')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "Find location by id", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
 }
 
 const listLocationsByToken = async(req, res) => {
+    log("INFO", "List location by token.")
     try {
         const locations = await Location.find({ token: { $regex: req.params.token, $options: 'i' } }).exec();
         res.json(locations);
-        console.log('findById')
     } catch (e) {
-        console.log(e)
+        log("WARNING", "List location by token", e.stack)
         res.status(404).send({ error: "boo:(" });
     }
-}
-
-const checkToken = (token) => {
-    var soap = require('soap');
-    var url = 'http://127.0.0.1:8083/soap?wsdl';
-    var args = { token: token };
-    return new Promise((resolve, reject) => {
-        soap.createClient(url, (err, client) => {
-            client.checkToken(args, (err, result, body) => {
-                return resolve(result)
-            })
-        });
-    });
-
 }
 
 
